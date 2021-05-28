@@ -2,6 +2,10 @@ import csv
 from datetime import datetime
 import os
 
+import numpy
+import pandas
+
+
 months = [
     'January',
     'February',
@@ -37,3 +41,14 @@ def write_final(data):
         if ext == 'csv':
             continue
     return True
+
+
+def sort_key(series):
+    if series.name == 'Grade':
+            return series == 9
+    return series
+
+def sort_members(member_list_dataframe):
+    for i in member_list_dataframe.index:
+	member_list_dataframe['Sorted Name'][i] = member_list_dataframe['Sorted Name'][i][1] + member_list_dataframe['Sorted Name'][i][0]
+    return df.sort_values(['Grade', 'Sorted Name'], key=sort_key)
