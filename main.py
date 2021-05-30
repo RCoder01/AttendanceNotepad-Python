@@ -23,18 +23,22 @@ months = [
     'December'
 ]
 
+
 def output(str: str) -> None:
     print(str)
+
 
 def handleError(str: str) -> None:
     output(str)
     quit()
+
 
 def log(str: str, log_list: list) -> list:
     """Appends a timestamped str to log_list"""
     
     log_list.append(f'[{datetime.now().isoformat()}] {str}')
     return log_list
+
 
 def get_next_ID() -> int:
     """Returns a user input for the next ID to be processed"""
@@ -45,6 +49,7 @@ def get_next_ID() -> int:
         except ValueError:
             output('Invalid ID input')
 
+
 def get_repeat_num(head: str, list: list) -> str:
     """Calculates modifier for head such that it is unique in list"""
 
@@ -53,6 +58,7 @@ def get_repeat_num(head: str, list: list) -> str:
         add[1] += 1
         add[0] = ' (' + str(add[1]) + ')'
     return head + add[0]
+
 
 def write_session(log_list: list, ses_df: pd.DataFrame) -> None:
     """Writes the log and csv output files specified by the given data"""
@@ -71,7 +77,8 @@ def write_session(log_list: list, ses_df: pd.DataFrame) -> None:
                    + '\\' \
                    + months[now.month - 1]
         #Creates output_directory if it doesn't already exist
-        if not os.path.isdir(out_dir): os.makedirs(out_dir)
+        if not os.path.isdir(out_dir):
+            os.makedirs(out_dir)
 
         #Output file name with relative directory
         out_path = out_dir \
@@ -116,6 +123,7 @@ def write_session(log_list: list, ses_df: pd.DataFrame) -> None:
             ses_df_copy.to_csv(out_path)
             continue
 
+
 def sort_key(series: pd.Series) -> pd.Series:
     """Robostangs attendance sorting algorithm"""
 
@@ -126,17 +134,24 @@ def sort_key(series: pd.Series) -> pd.Series:
     string = series.str
     return string[:string.find(' ')] + string[string.find(' ') + 1:]
 
+
 def sort_members(member_df: pd.DataFrame) -> pd.DataFrame:
     """Sorts member_df using defined key 'sort_key'"""
 
-    try: return member_df.sort_values(['Grade', 'Full Name'], key=sort_key)
-    except KeyError: handleError('The "Member List" file was improperly formatted')
+    try:
+        return member_df.sort_values(['Grade', 'Full Name'], key=sort_key)
+    except KeyError:
+        handleError('The "Member List" file was improperly formatted')
+
 
 def get_members() -> pd.DataFrame:
     """Returns a dataframe of the data in local 'Member List.csv'"""
 
-    try: return pd.read_csv(os.getcwd() + '\\Member List.csv').set_index('ID')
-    except FileNotFoundError: handleError('The "Member List" file has either been removed or renamed')
+    try:
+        return pd.read_csv(os.getcwd() + '\\Member List.csv').set_index('ID')
+    except FileNotFoundError:
+        handleError('The "Member List" file has either been removed or renamed')
+
 
 def get_output_table() -> pd.DataFrame:
     """Returns dataframe of existing data in local 'Output Table.csv'
@@ -147,13 +162,16 @@ def get_output_table() -> pd.DataFrame:
     
     #If the file exists
     if os.path.isfile(file_path):
-        try: return pd.read_csv(file_path).set_index('ID')
+        try:
+            return pd.read_csv(file_path).set_index('ID')
         #If file is empty, continue and return base dataframe
-        except pd.errors.EmptyDataError as err: pass
+        except pd.errors.EmptyDataError as err:
+            pass
     
     #If either the file does not exist or the file is empty
     open(file_path, 'w').close()
     return get_members().drop(columns=['Grade'])
+
 
 def format_output_table(
         csv_df: pd.DataFrame, 
@@ -180,6 +198,7 @@ def format_output_table(
         }
     )
 
+
 def format_session_table(member_df: pd.DataFrame) -> pd.DataFrame:
     """Returns a new session table instance"""
 
@@ -196,6 +215,7 @@ def format_session_table(member_df: pd.DataFrame) -> pd.DataFrame:
     
     return ses
 
+
 def read_cfgs() -> dict:
     """Returns a config dictionary from local 'configs.cfg'"""
 
@@ -210,9 +230,12 @@ def read_cfgs() -> dict:
                     #For valid lines in 'config.cfg' with an '='
                     opt, val = line.replace('\n', '').split('=', 1)
                     #Try to convert the value (after '=') to a number
-                    try: val = eval(val)
-                    except NameError: pass
-                    except SyntaxError: pass
+                    try:
+                        val = eval(val)
+                    except NameError:
+                        pass
+                    except SyntaxError:
+                        pass
                     #If it's not a number, just add as string
                     cfg_dict[opt] = val
     #If config.cfg doesn't exist, create it
@@ -220,6 +243,7 @@ def read_cfgs() -> dict:
         open('config.cfg', mode='x', encoding='UTF-8').close()
     
     return cfg_dict
+
 
 def sign_in_out(ID: int, session_df: pd.DataFrame, reqd_hours: int) -> bool:
     """
@@ -248,6 +272,7 @@ def sign_in_out(ID: int, session_df: pd.DataFrame, reqd_hours: int) -> bool:
         return False
     return True
 
+
 if __name__ == '__main__':
     #Initialize all dataframes and log list
     mem = sort_members(get_members())
@@ -271,7 +296,8 @@ if __name__ == '__main__':
             output(f'You have successfully signed {io}!')
             log(f'{ID} signed {io}', log_list)
     #Exits infinite loop on keyboard interrupt
-    except KeyboardInterrupt: print('Ending')
+    except KeyboardInterrupt:
+        print('Ending')
     
     #Converts 'Credit' column from boolean to int for convenience
     out[out.columns[-1]] = ses['Credit'].astype(int)
