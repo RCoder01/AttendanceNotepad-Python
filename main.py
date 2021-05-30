@@ -128,7 +128,8 @@ def sort_key(series: pd.Series) -> pd.Series:
     """Robostangs attendance sorting algorithm"""
 
     #For the grade column, sort new members last (True sorts after False)
-    if series.name == 'Grade': return series == 9
+    if series.name == 'Grade':
+        return series == 9
 
     #For 'Full Name', sort alphabetically by last, then first name
     string = series.str
