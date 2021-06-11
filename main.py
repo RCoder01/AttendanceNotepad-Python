@@ -60,7 +60,7 @@ def get_repeat_num(head: str, list: list) -> str:
     return head + add[0]
 
 
-def write_session(log_list: list, ses_df: pd.DataFrame) -> None:
+def write_session(log_list: list, ses_df: DataFrame) -> None:
     """Writes the log and csv output files specified by the given data"""
 
     #Runs for log and table
@@ -124,7 +124,7 @@ def write_session(log_list: list, ses_df: pd.DataFrame) -> None:
             continue
 
 
-def sort_key(series: pd.Series) -> pd.Series:
+def sort_key(series: Series) -> Series:
     """Robostangs attendance sorting algorithm"""
 
     #For the grade column, sort new members last (True sorts after False)
@@ -136,7 +136,7 @@ def sort_key(series: pd.Series) -> pd.Series:
     return string[:string.find(' ')] + string[string.find(' ') + 1:]
 
 
-def sort_members(member_df: pd.DataFrame) -> pd.DataFrame:
+def sort_members(member_df: DataFrame) -> DataFrame:
     """Sorts member_df using defined key 'sort_key'"""
 
     try:
@@ -145,7 +145,7 @@ def sort_members(member_df: pd.DataFrame) -> pd.DataFrame:
         handleError('The "Member List" file was improperly formatted')
 
 
-def get_members() -> pd.DataFrame:
+def get_members() -> DataFrame:
     """Returns a dataframe of the data in local 'Member List.csv'"""
 
     try:
@@ -154,7 +154,7 @@ def get_members() -> pd.DataFrame:
         handleError('The "Member List" file has either been removed or renamed')
 
 
-def get_output_table() -> pd.DataFrame:
+def get_output_table() -> DataFrame:
     """Returns dataframe of existing data in local 'Output Table.csv'
     If no file exists, creates one and returns a base dataframe
     """
@@ -175,9 +175,9 @@ def get_output_table() -> pd.DataFrame:
 
 
 def format_output_table(
-        csv_df: pd.DataFrame, 
-        member_df: pd.DataFrame
-    ) -> pd.DataFrame:
+        csv_df: DataFrame, 
+        member_df: DataFrame
+    ) -> DataFrame:
     """Returns a properly formatted csv_table"""
 
     #Technically a one-liner
@@ -200,7 +200,7 @@ def format_output_table(
     )
 
 
-def format_session_table(member_df: pd.DataFrame) -> pd.DataFrame:
+def format_session_table(member_df: DataFrame) -> DataFrame:
     """Returns a new session table instance"""
 
     ses = member_df.copy()
@@ -220,12 +220,14 @@ def format_session_table(member_df: pd.DataFrame) -> pd.DataFrame:
 def read_cfgs() -> dict:
     """Returns a config dictionary from local 'configs.cfg'"""
 
+    cfg_file_name = 'config.cfg'
     #Default configs
     cfg_dict = {
         'requiredHours': 2
     }
+
     try:
-        with open('config.cfg', encoding='UTF-8') as cfg_file:
+        with open(cfg_file_name, encoding='UTF-8') as cfg_file:
             for line in cfg_file.readlines():
                 if line.find('=') != -1:
                     #For valid lines in 'config.cfg' with an '='
@@ -246,7 +248,7 @@ def read_cfgs() -> dict:
     return cfg_dict
 
 
-def sign_in_out(ID: int, session_df: pd.DataFrame, reqd_hours: int) -> bool:
+def sign_in_out(ID: int, session_df: DataFrame, reqd_hours: int) -> bool:
     """
     Modifies session_df as necessary for sign-ins and outs and logs.
     
