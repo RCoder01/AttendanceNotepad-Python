@@ -53,7 +53,7 @@ def get_repeat_num(head: str, list: list) -> str:
     add = ['', 0]
     while head + add[0] in list:
         add[1] += 1
-        add[0] = ' (' + str(add[1]) + ')'
+        add[0] = f' ({add[1]})'
     return head + add[0]
 
 
@@ -67,12 +67,8 @@ def write_session(log_list: list, ses_df: DataFrame) -> None:
         ]:
         now = datetime.now()
 
-        out_dir = os.getcwd() \
-                   + rel_path \
-                   + '\\' \
-                   + str(now.year) \
-                   + '\\' \
-                   + months[now.month - 1]
+        out_dir = f'{os.getcwd()}{rel_path}\\{now.year}\\{months[now.month - 1]}'
+
         #Creates output_directory if it doesn't already exist
         if not os.path.isdir(out_dir):
             os.makedirs(out_dir)
@@ -152,7 +148,9 @@ def get_members() -> DataFrame:
 
 
 def get_output_table() -> DataFrame:
-    """Returns dataframe of existing data in local 'Output Table.csv'
+    """
+    Returns dataframe of data in local 'Output Table.csv'
+
     If no file exists, creates one and returns a base dataframe
     """
 
@@ -273,7 +271,7 @@ def sign_in_out(ID: int, session_df: DataFrame, reqd_hours: int) -> bool:
     return True
 
 
-if __name__ == '__main__':
+def main():
     #Initialize all dataframes and log list
     mem = sort_members(get_members())
     out = format_output_table(get_output_table(), mem)
@@ -305,3 +303,7 @@ if __name__ == '__main__':
     #Writes final outputs
     write_session(log_list, ses)
     out.to_csv(f'Output Table.csv')
+
+
+if __name__ == '__main__':
+    main()
