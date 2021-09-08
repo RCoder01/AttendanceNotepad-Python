@@ -274,17 +274,21 @@ def handle_input(frame: tk.Frame, ID: int) -> None:
     io = not sign_in_out(ID, frame.ses, frame.cfgs['requiredHours'])
     io = ['in', 'out'][int(io)]
     
-    output(frame, f'You have successfully signed {io}!', 'white')
+    output(frame, f'You have successfully signed {io}!', frame.fg_color)
     log(f'{ID} signed {io}', frame.log_list)
 
 
 class AttendanceGUI(tk.Frame):
-    '''
+    """
     Creates, manages, and handles GUI;
     Handles input conditional flow
-    '''
+    """
 
     def __init__(self, root=None, size_factor=1) -> None:
+        """
+        Initializes frame with data objects, frame widgets, and application window
+        """
+
         #Initialize all dataframes and log list
         self.mem = sort_members(get_members())
         self.out = format_output_table(get_output_table(), self.mem)
@@ -292,10 +296,16 @@ class AttendanceGUI(tk.Frame):
         self.cfgs = read_cfgs()
         self.log_list = []
 
+        #Foreground and background colors
+        if self.cfgs['color'] not in ('black', 'white'):
+            raise ValueError('Color present in config file not acceptable')
+        self.bg_color = self.cfgs['color']
+        self.fg_color = 'black' if self.bg_color == 'white' else 'white'
+
         #GUI initialization/creation
         super().__init__(root)
         self.root = root
-        self.root['bg'] = 'black'
+        self.root['bg'] = self.bg_color
         self.pack()
         
         #Window formatting
@@ -304,19 +314,23 @@ class AttendanceGUI(tk.Frame):
 
         #Create/initialize widgets
         #Object container (to center all objects in frame)
-        self.main_frame = tk.Frame(self.root, background='black')
+        self.main_frame = tk.Frame(self.root, background=self.bg_color)
         self.main_frame.pack(expand=True)
 
         #Robostangs logo
         self.logo = ImageTk.PhotoImage(Image.open('images\\robostangs_logo.png'))
-        self.logo_label = tk.Label(self.main_frame, image=self.logo, background='black')
+        self.logo_label = tk.Label(
+            self.main_frame, 
+            image=self.logo, 
+            background=self.bg_color
+        )
         self.logo_label.grid(column=0, row=0, columnspan=2)
         
         #Input box
         self.ID_input_field = tk.Entry(
             self.main_frame,
-            background='black',
-            foreground='white',
+            background=self.bg_color,
+            foreground=self.fg_color,
         )
         self.ID_input_field.grid(column=0, row=1, sticky='ew')
         
@@ -325,8 +339,8 @@ class AttendanceGUI(tk.Frame):
             self.main_frame, 
             text='Enter', 
             command=self.button_pressed,
-            background='black',
-            foreground='white',
+            background=self.bg_color,
+            foreground=self.fg_color,
         )
         self.confirm_button.grid(column=1, row=1, sticky='ew')
 
@@ -334,15 +348,23 @@ class AttendanceGUI(tk.Frame):
         self.message_label = tk.Label(
             self.main_frame,
             text='',
-            background='black',
-            foreground='white',
+            background=self.bg_color,
+            foreground=self.fg_color,
         )
         self.message_label.grid(column=0, row=2, columnspan=2)
 
         #Set handle_exit to run once window is closed
-        self.root.protocol("WM_DELETE_WINDOW", self.handle_exit)
+        self.root.protocol('WM_DELETE_WINDOW', self.handle_exit)
+        # self.ID_input_field.bind('<Enter>', self.button_pressed)
 
-    def button_pressed(self) -> None:
+    def button_pressed(self, *args) -> None:
+        """
+        Called whenever the enter key is pressed
+
+        Evaluates ID interpretation logic and 
+        manages handling of signing in/out
+        """
+
         ID = self.ID_input_field.get()
         
         try:
@@ -358,6 +380,12 @@ class AttendanceGUI(tk.Frame):
         handle_input(self, ID)
     
     def handle_exit(self) -> None:
+        """
+        Run when the program is quit
+
+        Stores all relevant data
+        """
+        
         #Converts 'Credit' column from boolean to int for convenience
         self.out[self.out.columns[-1]] = self.ses['Credit'].astype(int)
 
