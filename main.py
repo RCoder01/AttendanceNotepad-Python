@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import os
 import tkinter as tk
+from numpy import blackman
 
 import pandas as pd
 from pandas.core.frame import DataFrame
@@ -23,8 +24,9 @@ months = [
 ]
 
 
-def output(frame: tk.Frame, message: str) -> None:
+def output(frame: tk.Frame, message: str, color='white') -> None:
     print(message)
+    frame.message_label['fg'] = color
     frame.message_label['text'] = message
 
 
@@ -266,13 +268,13 @@ def sign_in_out(ID: int, session_df: DataFrame, reqd_hours: int) -> bool:
 
 def handle_input(frame: tk.Frame, ID: int) -> None:
     #Reset text input field
-    frame.ID_input_field.delete(tk.FIRST, tk.LAST)
+    frame.ID_input_field.delete(0, len(frame.ID_input_field.get()))
     
     #Uses sign_in_out output to determine sign-in or sign-out
     io = not sign_in_out(ID, frame.ses, frame.cfgs['requiredHours'])
     io = ['in', 'out'][int(io)]
     
-    output(frame, f'You have successfully signed {io}!')
+    output(frame, f'You have successfully signed {io}!', 'white')
     log(f'{ID} signed {io}', frame.log_list)
 
 
@@ -293,6 +295,7 @@ class AttendanceGUI(tk.Frame):
         #GUI initialization/creation
         super().__init__(root)
         self.root = root
+        self.root['bg'] = 'black'
         self.pack()
         
         #Window formatting
@@ -301,17 +304,19 @@ class AttendanceGUI(tk.Frame):
 
         #Create/initialize widgets
         #Object container (to center all objects in frame)
-        self.main_frame = tk.Frame(self.root)
+        self.main_frame = tk.Frame(self.root, background='black')
         self.main_frame.pack(expand=True)
 
         #Robostangs logo
         self.logo = ImageTk.PhotoImage(Image.open('images\\robostangs_logo.png'))
-        self.logo_label = tk.Label(self.main_frame, image=self.logo)
+        self.logo_label = tk.Label(self.main_frame, image=self.logo, background='black')
         self.logo_label.grid(column=0, row=0, columnspan=2)
         
         #Input box
         self.ID_input_field = tk.Entry(
             self.main_frame,
+            background='black',
+            foreground='white',
         )
         self.ID_input_field.grid(column=0, row=1, sticky='ew')
         
@@ -320,6 +325,8 @@ class AttendanceGUI(tk.Frame):
             self.main_frame, 
             text='Enter', 
             command=self.button_pressed,
+            background='black',
+            foreground='white',
         )
         self.confirm_button.grid(column=1, row=1, sticky='ew')
 
@@ -327,8 +334,13 @@ class AttendanceGUI(tk.Frame):
         self.message_label = tk.Label(
             self.main_frame,
             text='',
+            background='black',
+            foreground='white',
         )
         self.message_label.grid(column=0, row=2, columnspan=2)
+
+        #Set handle_exit to run once window is closed
+        self.root.protocol("WM_DELETE_WINDOW", self.handle_exit)
 
     def button_pressed(self) -> None:
         ID = self.ID_input_field.get()
@@ -336,11 +348,11 @@ class AttendanceGUI(tk.Frame):
         try:
             ID = int(ID)
         except ValueError:
-            output(self, f'{ID} cannot be interpreted as an ID number, please try something different')
+            output(self, f'{ID} cannot be interpreted as an ID number, please try something different', 'red')
             return
 
         if ID not in self.mem.index:
-            output(self, f'{ID} not found in the Member List, please try again')
+            output(self, f'{ID} not found in the Member List, please try again', 'red')
             return
         
         handle_input(self, ID)
@@ -354,6 +366,8 @@ class AttendanceGUI(tk.Frame):
         self.out.to_csv('Output Table.csv')
 
         log('session ended', self.log_list)
+
+        self.root.destroy()
 
 
 if __name__ == '__main__':
