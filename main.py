@@ -1,9 +1,11 @@
 from datetime import datetime, timedelta
 import os
+import tkinter as tk
 
 import pandas as pd
 from pandas.core.frame import DataFrame
 from pandas.core.series import Series
+from PIL import Image, ImageTk
 
 months = [
     'January',
@@ -21,12 +23,13 @@ months = [
 ]
 
 
-def output(str: str) -> None:
-    print(str)
+def output(frame: tk.Frame, message: str) -> None:
+    print(message)
+    frame.message_label['text'] = message
 
 
-def handleError(str: str) -> None:
-    output(str)
+def handle_error(frame: tk.Frame, str: str) -> None:
+    output(frame, str)
     quit()
 
 
@@ -35,16 +38,6 @@ def log(str: str, log_list: list) -> list:
     
     log_list.append(f'[{datetime.now().isoformat()}] {str}')
     return log_list
-
-
-def get_next_ID() -> int:
-    """Returns a user input for the next ID to be processed"""
-    
-    while True:
-        try:
-            return int(input('id:\n'))
-        except ValueError:
-            output('Invalid ID input')
 
 
 def get_repeat_num(head: str, list: list) -> str:
@@ -135,7 +128,7 @@ def sort_members(member_df: DataFrame) -> DataFrame:
     try:
         return member_df.sort_values(['Grade', 'Full Name'], key=sort_key)
     except KeyError:
-        handleError('The "Member List" file was improperly formatted')
+        handle_error('The "Member List" file was improperly formatted')
 
 
 def get_members() -> DataFrame:
@@ -144,7 +137,7 @@ def get_members() -> DataFrame:
     try:
         return pd.read_csv(os.getcwd() + '\\Member List.csv').set_index('ID')
     except FileNotFoundError:
-        handleError('The "Member List" file has either been removed or renamed')
+        handle_error('The "Member List" file has either been removed or renamed')
 
 
 def get_output_table() -> DataFrame:
@@ -271,39 +264,99 @@ def sign_in_out(ID: int, session_df: DataFrame, reqd_hours: int) -> bool:
     return True
 
 
-def main():
-    #Initialize all dataframes and log list
-    mem = sort_members(get_members())
-    out = format_output_table(get_output_table(), mem)
-    ses = format_session_table(mem)
-    cfgs = read_cfgs()
-    log_list = []
-
-    #Gets ID input and runs until keyboard interrupt
-    try:
-        while True:
-            ID = get_next_ID()
-            
-            if ID not in mem.index:
-                output(str(ID) + ' not found in the Member List, please try again')
-                continue
-            
-            #Uses sign_in_out output to determine sign-in or sign-out
-            io = ['in', 'out'][not sign_in_out(ID, ses, cfgs['requiredHours'])]
-            
-            output(f'You have successfully signed {io}!')
-            log(f'{ID} signed {io}', log_list)
-    #Exits infinite loop on keyboard interrupt
-    except KeyboardInterrupt:
-        print('Ending')
+def handle_input(frame: tk.Frame, ID: int) -> None:
+    #Reset text input field
+    frame.ID_input_field.delete(tk.FIRST, tk.LAST)
     
-    #Converts 'Credit' column from boolean to int for convenience
-    out[out.columns[-1]] = ses['Credit'].astype(int)
+    #Uses sign_in_out output to determine sign-in or sign-out
+    io = not sign_in_out(ID, frame.ses, frame.cfgs['requiredHours'])
+    io = ['in', 'out'][int(io)]
+    
+    output(frame, f'You have successfully signed {io}!')
+    log(f'{ID} signed {io}', frame.log_list)
 
-    #Writes final outputs
-    write_session(log_list, ses)
-    out.to_csv(f'Output Table.csv')
+
+class AttendanceGUI(tk.Frame):
+    '''
+    Creates, manages, and handles GUI;
+    Handles input conditional flow
+    '''
+
+    def __init__(self, root=None, size_factor=1) -> None:
+        #Initialize all dataframes and log list
+        self.mem = sort_members(get_members())
+        self.out = format_output_table(get_output_table(), self.mem)
+        self.ses = format_session_table(self.mem)
+        self.cfgs = read_cfgs()
+        self.log_list = []
+
+        #GUI initialization/creation
+        super().__init__(root)
+        self.root = root
+        self.pack()
+        
+        #Window formatting
+        self.root.title('Attendance')
+        self.root.iconbitmap(f'{os.getcwd()}\\images\\robostangs_logo.ico')
+
+        #Create/initialize widgets
+        #Object container (to center all objects in frame)
+        self.main_frame = tk.Frame(self.root)
+        self.main_frame.pack(expand=True)
+
+        #Robostangs logo
+        self.logo = ImageTk.PhotoImage(Image.open('images\\robostangs_logo.png'))
+        self.logo_label = tk.Label(self.main_frame, image=self.logo)
+        self.logo_label.grid(column=0, row=0, columnspan=2)
+        
+        #Input box
+        self.ID_input_field = tk.Entry(
+            self.main_frame,
+        )
+        self.ID_input_field.grid(column=0, row=1, sticky='ew')
+        
+        #Confirm button
+        self.confirm_button = tk.Button(
+            self.main_frame, 
+            text='Enter', 
+            command=self.button_pressed,
+        )
+        self.confirm_button.grid(column=1, row=1, sticky='ew')
+
+        #Label for output messages
+        self.message_label = tk.Label(
+            self.main_frame,
+            text='',
+        )
+        self.message_label.grid(column=0, row=2, columnspan=2)
+
+    def button_pressed(self) -> None:
+        ID = self.ID_input_field.get()
+        
+        try:
+            ID = int(ID)
+        except ValueError:
+            output(self, f'{ID} cannot be interpreted as an ID number, please try something different')
+            return
+
+        if ID not in self.mem.index:
+            output(self, f'{ID} not found in the Member List, please try again')
+            return
+        
+        handle_input(self, ID)
+    
+    def handle_exit(self) -> None:
+        #Converts 'Credit' column from boolean to int for convenience
+        self.out[self.out.columns[-1]] = self.ses['Credit'].astype(int)
+
+        #Writes final outputs
+        write_session(self.log_list, self.ses)
+        self.out.to_csv('Output Table.csv')
+
+        log('session ended', self.log_list)
 
 
 if __name__ == '__main__':
-    main()
+    root = tk.Tk()
+    GUI = AttendanceGUI(root=root)
+    GUI.mainloop()
