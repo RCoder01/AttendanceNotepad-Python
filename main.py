@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 import os
 import tkinter as tk
-from numpy import blackman
 
 import pandas as pd
 from pandas.core.frame import DataFrame
@@ -385,7 +384,7 @@ class AttendanceGUI(tk.Frame):
 
         Stores all relevant data
         """
-        
+
         #Converts 'Credit' column from boolean to int for convenience
         self.out[self.out.columns[-1]] = self.ses['Credit'].astype(int)
 
