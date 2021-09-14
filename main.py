@@ -296,10 +296,11 @@ class AttendanceGUI(tk.Frame):
         self.log_list = []
 
         #Foreground and background colors
-        if self.cfgs['color'] not in ('black', 'white'):
+        if self.cfgs['backgroundColor'] not in ('black', 'white'):
             raise ValueError('Color present in config file not acceptable')
-        self.bg_color = self.cfgs['color']
+        self.bg_color = self.cfgs['backgroundColor']
         self.fg_color = 'black' if self.bg_color == 'white' else 'white'
+        print(self.fg_color)
 
         #GUI initialization/creation
         super().__init__(root)
@@ -354,7 +355,7 @@ class AttendanceGUI(tk.Frame):
 
         #Set handle_exit to run once window is closed
         self.root.protocol('WM_DELETE_WINDOW', self.handle_exit)
-        # self.ID_input_field.bind('<Enter>', self.button_pressed)
+        self.ID_input_field.bind('<Return>', self.button_pressed)
 
     def button_pressed(self, *args) -> None:
         """
