@@ -51,64 +51,50 @@ def get_repeat_num(head: str, list: list) -> str:
     return head + add[0]
 
 
-def write_session(log_list: list, ses_df: DataFrame) -> None:
+def write_session(log_list: list, ses_df: DataFrame, ses_names: list[str]) -> None:
     """Writes the log and csv output files specified by the given data"""
 
-    #Runs for log and table
-    for rel_path, ext in [
-            ('\\files\\logs', 'txt'), 
-            ('\\files\\tables', 'csv'),
-        ]:
-        now = datetime.now()
+    #Handling for logs
+    log_path = make_abs_time_dir('files\\logs', 'txt', ses_names)
+    with open(log_path, mode='w', encoding='UTF-8') as f:
+        f.writelines(log_list)
+    
+    #Handling for tables
+    #Formats ses_df (session_dataframe) for output
+    ses_df_copy = ses_df.copy()
+    ses_df_copy['Credit'] = ses_df['Credit'].astype(int)
+    ses_df_copy['Times'] = ses_df['Times'].apply(
+        lambda x: [str(e) for e in x]
+    )
+    ses_df_copy['Total Time'] = ses_df_copy['Total Time'].map(
+        timedelta.total_seconds
+    )
+    ses_df_copy['Total Time'] /= 3600
+    ses_df_copy = ses_df_copy.rename(
+        columns={
+            'Total Time': 'Hours Spent'
+        }
+    )
+    #Writes modified copy of ses_df
+    table_path = make_abs_time_dir('files\\tables', 'csv', ses_names)
+    ses_df_copy.to_csv(table_path)
 
-        out_dir = f'{os.getcwd()}{rel_path}\\{now.year}\\{months[now.month - 1]}'
 
-        #Creates output_directory if it doesn't already exist
-        if not os.path.isdir(out_dir):
-            os.makedirs(out_dir)
+def make_abs_time_dir(rel_path: str, ext: str, names: list) -> str:
+    """
+    Calculates file name (so there is no conflict within names), 
+    and creates directories leading up to the file name
+    """
+    now = datetime.now()
 
-        #Output file name with relative directory
-        out_path = out_dir \
-             +  '\\' \
-             +  get_repeat_num(
-                    str(now.day), 
-                    [
-                        os.path.splitext(file)[0] 
-                        for file 
-                        in os.listdir(out_dir)
-                    ]
-                ) \
-             +  '.' \
-             +  str(ext)
-        
-        #Handling for logs
-        if ext == 'txt':
-            with open(out_path, mode='w', encoding='UTF-8') as f:
-                for line in log_list:
-                    f.write(line + '\n')
-            continue
-        
-        #Handling for tables
-        elif ext == 'csv':
-            #Formats ses_df (session_dataframe) for output
-            ses_df_copy = ses_df.copy()
-            ses_df_copy['Credit'] = ses_df['Credit'].astype(int)
-            ses_df_copy['Times'] = ses_df['Times'].apply(
-                lambda x: [str(e) for e in x]
-            )
-            ses_df_copy['Total Time'] = ses_df_copy['Total Time'].map(
-                timedelta.total_seconds
-            )
-            ses_df_copy['Total Time'] /= 3600
-            ses_df_copy = ses_df_copy.rename(
-                columns={
-                    'Total Time': 'Hours Spent'
-                }
-            )
-            
-            #Writes modified copy of ses_df
-            ses_df_copy.to_csv(out_path)
-            continue
+    out_dir = f'{os.getcwd()}\\{rel_path}\\{now.year}\\{months[now.month - 1]}'
+
+    #Creates output_directory if it doesn't already exist
+    if not os.path.isdir(out_dir):
+        os.makedirs(out_dir)
+
+    #Output file name with relative directory
+    return f'{out_dir}\\{get_repeat_num(str(now.day), names)}.{ext}'
 
 
 def sort_key(series: Series) -> Series:
@@ -300,7 +286,6 @@ class AttendanceGUI(tk.Frame):
             raise ValueError('Color present in config file not acceptable')
         self.bg_color = self.cfgs['backgroundColor']
         self.fg_color = 'black' if self.bg_color == 'white' else 'white'
-        print(self.fg_color)
 
         #GUI initialization/creation
         super().__init__(root)
@@ -390,7 +375,8 @@ class AttendanceGUI(tk.Frame):
         self.out[self.out.columns[-1]] = self.ses['Credit'].astype(int)
 
         #Writes final outputs
-        write_session(self.log_list, self.ses)
+        session_names = [n[8:] for n in self.out.columns][2:]
+        write_session(self.log_list, self.ses, session_names)
         self.out.to_csv('Output Table.csv')
 
         log('session ended', self.log_list)
