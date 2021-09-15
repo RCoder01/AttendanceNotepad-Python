@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import os
 import tkinter as tk
+from typing import Union
 
 import pandas as pd
 from pandas.core.frame import DataFrame
@@ -241,13 +242,17 @@ def sign_in_out(ID: int, session_df: DataFrame, reqd_hours: int) -> bool:
 
 def handle_input(ses_df: DataFrame, ID: int) -> None:
     #Reset text input field
-    frame.ID_input_field.delete(0, len(frame.ID_input_field.get()))
+    frame.reset_input_field()
     
     #Uses sign_in_out output to determine sign-in or sign-out
     io = not sign_in_out(ID, frame.ses, frame.cfgs['requiredHours'])
     io = ['in', 'out'][int(io)]
     
-    output(frame, f'You have successfully signed {io}!', frame.fg_color)
+    fname = ses_df.at[ID, "Full Name"].split(" ")[0]
+    output(
+        f'Thanks {fname}, You have successfully signed {io}!', 
+        frame.fg_color
+    )
     log(f'{ID} signed {io}', frame.log_list)
 
 
@@ -330,6 +335,16 @@ class AttendanceGUI(tk.Frame):
         self.root.protocol('WM_DELETE_WINDOW', self.handle_exit)
         self.ID_input_field.bind('<Return>', self.button_pressed)
 
+    def get_input(self) -> Union[str, int]:
+        input = self.ID_input_field.get()
+        try:
+            return int(input)
+        except ValueError:
+            return input
+    
+    def reset_input_field(self) -> None:
+        self.ID_input_field.delete(0, len(str(self.get_input())))
+
     def button_pressed(self, *args) -> None:
         """
         Called whenever the enter key is pressed
@@ -338,11 +353,9 @@ class AttendanceGUI(tk.Frame):
         manages handling of signing in/out
         """
 
-        ID = self.ID_input_field.get()
+        ID = self.get_input()
         
-        try:
-            ID = int(ID)
-        except ValueError:
+        if not isinstance(ID, int):
             output(f'{ID} cannot be interpreted as an ID number, please try something different', 'red')
             return
 
