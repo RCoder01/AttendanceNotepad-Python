@@ -11,9 +11,11 @@ from PIL import Image, ImageTk
 
 def output(message: str, color='white') -> None:
     print(message)
-    frame.message_label['fg'] = color
-    frame.message_label['text'] = message
-
+    try:
+        frame.message_label['fg'] = color
+        frame.message_label['text'] = message
+    except NameError:
+        pass
 
 def handle_error(str: str) -> None:
     output(str)
@@ -143,22 +145,22 @@ def format_output_table(
     ) -> DataFrame:
     """Returns a properly formatted csv_table"""
 
-    #Technically a one-liner
     #First, merges csv_table and member_table such that:
     #   Members removed from member_table are removed
     #   Members added to member_table are added
     #Next, adds a new column for this session and populates with False
-    return pd.merge(
+    new_csv_table = pd.merge(
         csv_df, 
         member_df.drop(columns=['Grade']),
         how='right', 
         on=['ID', 'Full Name']
-    ).assign(
+    )
+    return new_csv_table.assign(
         **{
             get_repeat_num(
                 datetime.now().isoformat()[:10], 
                 csv_df.columns
-            ): [False] * len(csv_df)
+            ): [False] * len(new_csv_table)
         }
     )
 
@@ -373,6 +375,13 @@ class AttendanceGUI(tk.Frame):
 
         #Converts 'Credit' column from boolean to int for convenience
         self.out[self.out.columns[-1]] = self.ses['Credit'].astype(int)
+        #Replaces NaN with '' and converts all floats to int
+        credit_columns = self.out[self.out.columns[1:]]\
+            .fillna(-1)\
+            .astype(int)\
+            .astype(str)
+        credit_columns[credit_columns == '-1'] = ''
+        self.out[self.out.columns[1:]] = credit_columns
 
         #Get session name from datetime and self.out
         session_name = datetime.now().strftime("%B-%d-%Y")
