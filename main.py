@@ -7,20 +7,6 @@ from pandas.core.frame import DataFrame
 from pandas.core.series import Series
 from PIL import Image, ImageTk
 
-months = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December'
-]
 
 
 def output(frame: tk.Frame, message: str, color='white') -> None:
@@ -88,6 +74,9 @@ def make_abs_time_dir(rel_path: str, ext: str, names: list) -> str:
     now = datetime.now()
 
     out_dir = f'{os.getcwd()}\\{rel_path}\\{now.year}\\{months[now.month - 1]}'
+    #https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
+    out_dir = f'{os.getcwd()}\\{rel_path}\\{now.strftime("%Y/%m-%B")}'
+    out_dir = out_dir.replace("/", "\\")
 
     #Creates output_directory if it doesn't already exist
     if not os.path.isdir(out_dir):
