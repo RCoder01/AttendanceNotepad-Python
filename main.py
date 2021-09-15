@@ -37,11 +37,11 @@ def get_repeat_num(head: str, list: list) -> str:
     return head + add[0]
 
 
-def write_session(log_list: list, ses_df: DataFrame, ses_names: list[str]) -> None:
+def write_session(log_list: list, ses_df: DataFrame, ses_name: str) -> None:
     """Writes the log and csv output files specified by the given data"""
 
     #Handling for logs
-    log_path = make_abs_time_dir('files\\logs', 'txt', ses_names)
+    log_path = make_abs_time_dir('files\\logs', f'{ses_name}.txt')
     with open(log_path, mode='w', encoding='UTF-8') as f:
         f.writelines(log_list)
     
@@ -62,18 +62,17 @@ def write_session(log_list: list, ses_df: DataFrame, ses_names: list[str]) -> No
         }
     )
     #Writes modified copy of ses_df
-    table_path = make_abs_time_dir('files\\tables', 'csv', ses_names)
+    table_path = make_abs_time_dir('files\\tables', f'{ses_name}.csv')
     ses_df_copy.to_csv(table_path)
 
 
-def make_abs_time_dir(rel_path: str, ext: str, names: list) -> str:
+def make_abs_time_dir(rel_path: str, fname: str) -> str:
     """
     Calculates file name (so there is no conflict within names), 
     and creates directories leading up to the file name
     """
     now = datetime.now()
 
-    out_dir = f'{os.getcwd()}\\{rel_path}\\{now.year}\\{months[now.month - 1]}'
     #https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
     out_dir = f'{os.getcwd()}\\{rel_path}\\{now.strftime("%Y/%m-%B")}'
     out_dir = out_dir.replace("/", "\\")
@@ -83,7 +82,7 @@ def make_abs_time_dir(rel_path: str, ext: str, names: list) -> str:
         os.makedirs(out_dir)
 
     #Output file name with relative directory
-    return f'{out_dir}\\{get_repeat_num(str(now.day), names)}.{ext}'
+    return f'{out_dir}\\{fname}'
 
 
 def sort_key(series: Series) -> Series:
@@ -91,7 +90,7 @@ def sort_key(series: Series) -> Series:
 
     #For the grade column, sort new members last (True sorts after False)
     if series.name == 'Grade':
-        return series == 9
+        return series <= 10
 
     #For 'Full Name', sort alphabetically by last, then first name
     string = series.str
@@ -375,9 +374,13 @@ class AttendanceGUI(tk.Frame):
         #Converts 'Credit' column from boolean to int for convenience
         self.out[self.out.columns[-1]] = self.ses['Credit'].astype(int)
 
+        #Get session name from datetime and self.out
+        session_name = datetime.now().strftime("%B-%d-%Y")
+        suffix = self.out.columns[-1].split(' ')[1:]
+        session_name += suffix[0] if suffix else ''
+
         #Writes final outputs
-        session_names = [n[8:] for n in self.out.columns][2:]
-        write_session(self.log_list, self.ses, session_names)
+        write_session(self.log_list, self.ses, session_name)
         self.out.to_csv('Output Table.csv')
 
         log('session ended', self.log_list)
