@@ -8,15 +8,14 @@ from pandas.core.series import Series
 from PIL import Image, ImageTk
 
 
-
-def output(frame: tk.Frame, message: str, color='white') -> None:
+def output(message: str, color='white') -> None:
     print(message)
     frame.message_label['fg'] = color
     frame.message_label['text'] = message
 
 
-def handle_error(frame: tk.Frame, str: str) -> None:
-    output(frame, str)
+def handle_error(str: str) -> None:
+    output(str)
     quit()
 
 
@@ -240,7 +239,7 @@ def sign_in_out(ID: int, session_df: DataFrame, reqd_hours: int) -> bool:
     return True
 
 
-def handle_input(frame: tk.Frame, ID: int) -> None:
+def handle_input(ses_df: DataFrame, ID: int) -> None:
     #Reset text input field
     frame.ID_input_field.delete(0, len(frame.ID_input_field.get()))
     
@@ -344,14 +343,14 @@ class AttendanceGUI(tk.Frame):
         try:
             ID = int(ID)
         except ValueError:
-            output(self, f'{ID} cannot be interpreted as an ID number, please try something different', 'red')
+            output(f'{ID} cannot be interpreted as an ID number, please try something different', 'red')
             return
 
         if ID not in self.mem.index:
-            output(self, f'{ID} not found in the Member List, please try again', 'red')
+            output(f'{ID} not found in the Member List, please try again', 'red')
             return
         
-        handle_input(self, ID)
+        handle_input(self.ses, ID)
     
     def handle_exit(self) -> None:
         """
@@ -375,5 +374,5 @@ class AttendanceGUI(tk.Frame):
 
 if __name__ == '__main__':
     root = tk.Tk()
-    GUI = AttendanceGUI(root=root)
+    frame = GUI = AttendanceGUI(root=root)
     GUI.mainloop()
