@@ -1,12 +1,20 @@
 from datetime import datetime, timedelta
 import os
 import tkinter as tk
-from typing import Union
+from typing import Any, Union
 
 import pandas as pd
 from pandas.core.frame import DataFrame
 from pandas.core.series import Series
 from PIL import Image, ImageTk
+
+
+def on_start(*args: Any, **kwargs: Any) -> Any:
+    log(f'Session {frame.get_session_name()} started')
+
+
+def on_end(*args: Any, **kwargs: Any) -> Any:
+    log(f'Session {frame.get_session_name()} ended')
 
 
 def output(message: str, color='white') -> None:
@@ -24,11 +32,18 @@ def handle_error(str: str) -> None:
     quit()
 
 
-def log(str: str, log_list: list) -> list:
-    """Appends a timestamped str to log_list"""
+def log(str: str) -> list:
+    """Appends a timestamped str to the log"""
     
-    log_list.append(f'[{datetime.now().isoformat()}] {str}')
-    return log_list
+    with open(
+        make_abs_time_dir(
+            'files\\logs', 
+            f'{datetime.now().day}.txt',
+        ), 
+        mode='a', 
+        encoding='UTF-8',
+    ) as f:
+        f.write(f'[{datetime.now().isoformat()}] {str}')
 
 
 def get_repeat_num(head: str, list: list) -> str:
@@ -41,15 +56,9 @@ def get_repeat_num(head: str, list: list) -> str:
     return head + add[0]
 
 
-def write_session(log_list: list, ses_df: DataFrame, ses_name: str) -> None:
-    """Writes the log and csv output files specified by the given data"""
-
-    #Handling for logs
-    log_path = make_abs_time_dir('files\\logs', f'{ses_name}.txt')
-    with open(log_path, mode='w', encoding='UTF-8') as f:
-        f.writelines(log_list)
+def write_session(ses_df: DataFrame, ses_name: str) -> None:
+    """Writes the csv output files specified by the given data"""
     
-    #Handling for tables
     #Formats ses_df (session_dataframe) for output
     ses_df_copy = ses_df.copy()
     ses_df_copy['Credit'] = ses_df['Credit'].astype(int)
@@ -248,7 +257,10 @@ def handle_input(ses_df: DataFrame, ID: int) -> None:
     """Called when a valid input is provided and enter is pressed"""
 
     #Reset text input field
-    frame.reset_input_field()
+    try:
+        frame.reset_input_field()
+    except NameError:
+        raise RuntimeError('handle_input cannot be run before GUI is initialized')
     
     #Uses sign_in_out output to determine sign-in or sign-out
     io = not sign_in_out(ID, frame.ses, frame.cfgs['requiredHours'])
@@ -259,7 +271,7 @@ def handle_input(ses_df: DataFrame, ID: int) -> None:
         f'Thanks {fname}, You have successfully signed {io}!', 
         frame.fg_color
     )
-    log(f'{ID} signed {io}', frame.log_list)
+    log(f'{ID} signed {io}')
 
 
 class AttendanceGUI(tk.Frame):
@@ -278,7 +290,6 @@ class AttendanceGUI(tk.Frame):
         self.out = format_output_table(get_output_table(), self.mem)
         self.ses = format_session_table(self.mem)
         self.cfgs = read_cfgs()
-        self.log_list = []
 
         #Foreground and background colors
         if self.cfgs['backgroundColor'] not in ('black', 'white'):
@@ -400,10 +411,8 @@ class AttendanceGUI(tk.Frame):
         session_name += suffix[0] if suffix else ''
 
         #Writes final outputs
-        write_session(self.log_list, self.ses, session_name)
+        write_session(self.ses, session_name)
         self.out.to_csv('Output Table.csv')
-
-        log('session ended', self.log_list)
 
         self.root.destroy()
 
@@ -411,4 +420,9 @@ class AttendanceGUI(tk.Frame):
 if __name__ == '__main__':
     root = tk.Tk()
     frame = GUI = AttendanceGUI(root=root)
+
+    on_start()
+    
     GUI.mainloop()
+
+    on_end()
