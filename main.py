@@ -10,6 +10,7 @@ from PIL import Image, ImageTk
 
 
 def output(message: str, color='white') -> None:
+    """Sends output to console and application"""
     print(message)
     try:
         frame.message_label['fg'] = color
@@ -18,6 +19,7 @@ def output(message: str, color='white') -> None:
         pass
 
 def handle_error(str: str) -> None:
+    """Exit handling for fatal issues"""
     output(str)
     quit()
 
@@ -73,6 +75,7 @@ def make_abs_time_dir(rel_path: str, fname: str) -> str:
     Calculates file name (so there is no conflict within names), 
     and creates directories leading up to the file name
     """
+
     now = datetime.now()
 
     #https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
@@ -242,6 +245,8 @@ def sign_in_out(ID: int, session_df: DataFrame, reqd_hours: int) -> bool:
 
 
 def handle_input(ses_df: DataFrame, ID: int) -> None:
+    """Called when a valid input is provided and enter is pressed"""
+
     #Reset text input field
     frame.reset_input_field()
     
@@ -337,6 +342,11 @@ class AttendanceGUI(tk.Frame):
         self.ID_input_field.bind('<Return>', self.button_pressed)
 
     def get_input(self) -> Union[str, int]:
+        """
+        Returns value entered in input field.
+        Returns as int if possible, otherwise string
+        """
+
         input = self.ID_input_field.get()
         try:
             return int(input)
@@ -344,11 +354,12 @@ class AttendanceGUI(tk.Frame):
             return input
     
     def reset_input_field(self) -> None:
+        """Sets input field value to blank"""
         self.ID_input_field.delete(0, len(str(self.get_input())))
 
     def button_pressed(self, *args) -> None:
         """
-        Called whenever the enter key is pressed
+        Called whenever the enter key/button is pressed
 
         Evaluates ID interpretation logic and 
         manages handling of signing in/out
@@ -375,7 +386,7 @@ class AttendanceGUI(tk.Frame):
 
         #Converts 'Credit' column from boolean to int for convenience
         self.out[self.out.columns[-1]] = self.ses['Credit'].astype(int)
-        #Replaces NaN with '' and converts all floats to int
+        #Replaces NaN with empty string and converts all floats to int
         credit_columns = self.out[self.out.columns[1:]]\
             .fillna(-1)\
             .astype(int)\
