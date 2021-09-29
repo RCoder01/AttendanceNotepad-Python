@@ -10,11 +10,11 @@ from PIL import Image, ImageTk
 
 
 def on_start(*args: Any, **kwargs: Any) -> Any:
-    log(f'Session {frame.get_session_name()} started')
+    log(f'Session {frame.session_name} started')
 
 
 def on_end(*args: Any, **kwargs: Any) -> Any:
-    log(f'Session {frame.get_session_name()} ended')
+    log(f'Session {frame.session_name} ended')
 
 
 def output(message: str, color='white') -> None:
@@ -33,7 +33,7 @@ def handle_error(str: str) -> None:
 
 
 def log(str: str) -> list:
-    """Appends a timestamped str to the log"""
+    """Writes a timestamped message to the log"""
     
     with open(
         make_abs_time_dir(
@@ -43,7 +43,7 @@ def log(str: str) -> list:
         mode='a', 
         encoding='UTF-8',
     ) as f:
-        f.write(f'[{datetime.now().isoformat()}] {str}')
+        f.write(f'[{datetime.now().isoformat()}] {str}\n')
 
 
 def get_repeat_num(head: str, list: list) -> str:
@@ -387,6 +387,14 @@ class AttendanceGUI(tk.Frame):
             return
         
         handle_input(self.ses, ID)
+
+    @property
+    def session_name(self) -> str:
+        session_name = datetime.now().strftime("%B-%d-%Y")
+        suffix = self.out.columns[-1].split(' ')[1:]
+        session_name += suffix[0] if suffix else ''
+        return session_name
+
     
     def handle_exit(self) -> None:
         """
@@ -406,12 +414,9 @@ class AttendanceGUI(tk.Frame):
         self.out[self.out.columns[1:]] = credit_columns
 
         #Get session name from datetime and self.out
-        session_name = datetime.now().strftime("%B-%d-%Y")
-        suffix = self.out.columns[-1].split(' ')[1:]
-        session_name += suffix[0] if suffix else ''
 
         #Writes final outputs
-        write_session(self.ses, session_name)
+        write_session(self.ses, self.session_name)
         self.out.to_csv('Output Table.csv')
 
         self.root.destroy()
