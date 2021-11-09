@@ -103,19 +103,18 @@ def sort_key(series: Series) -> Series:
     """Robostangs attendance sorting algorithm"""
 
     #For the grade column, sort new members last (True sorts after False)
-    if series.name == 'Grade':
+    if series.name == frame.cfgs['sortKeyColName']:
         return series <= 10
 
     #For 'Full Name', sort alphabetically by last, then first name
-    string = series.str
-    return string[:string.find(' ')] + string[string.find(' ') + 1:]
+    return series.apply(lambda s: s.split(' ')[::-1])
 
 
 def sort_members(member_df: DataFrame) -> DataFrame:
     """Sorts member_df using defined key 'sort_key'"""
 
     try:
-        return member_df.sort_values(['Grade', 'Full Name'], key=sort_key)
+        return member_df.sort_values([frame.cfgs['sortKeyColName'], 'Full Name'], key=sort_key)
     except KeyError:
         handle_error('The "Member List" file was improperly formatted')
 
@@ -148,7 +147,7 @@ def get_output_table() -> DataFrame:
     
     #If either the file does not exist or the file is empty
     open(file_path, 'w').close()
-    return get_members().drop(columns=['Grade'])
+    return get_members().drop(columns=[frame.cfgs['sortKeyColName']])
 
 
 def format_output_table(
@@ -163,7 +162,7 @@ def format_output_table(
     #Next, adds a new column for this session and populates with False
     new_csv_table = pd.merge(
         csv_df, 
-        member_df.drop(columns=['Grade']),
+        member_df.drop(columns=[frame.cfgs['sortKeyColName']]),
         how='right', 
         on=['ID', 'Full Name']
     )
@@ -188,8 +187,8 @@ def format_session_table(member_df: DataFrame) -> DataFrame:
         ['Credit', lambda: False],
     ]
     #Adds and populates columns
-    for name, val in cols:
-        ses[name] = [val() for _ in range(len(member_df))]
+    for name, type_ in cols:
+        ses[name] = [type_() for _ in range(len(member_df))]
     
     return ses
 
@@ -292,7 +291,7 @@ class AttendanceGUI(tk.Frame):
         self.cfgs = read_cfgs()
 
         #Foreground and background colors
-        if self.cfgs['backgroundColor'] not in ('black', 'white'):
+        if self.cfgs['backgroundColor'] not in {'black', 'white'}:
             raise ValueError('Color present in config file not acceptable')
         self.bg_color = self.cfgs['backgroundColor']
         self.fg_color = 'black' if self.bg_color == 'white' else 'white'
