@@ -103,18 +103,18 @@ def sort_key(series: Series) -> Series:
     """Robostangs attendance sorting algorithm"""
 
     #For the grade column, sort new members last (True sorts after False)
-    if series.name == frame.cfgs['sortKeyColName']:
-        return series <= 10
+    if series.name == cfgs['sortKeyColName']:
+        return series
 
     #For 'Full Name', sort alphabetically by last, then first name
-    return series.apply(lambda s: s.split(' ')[::-1])
+    return series.apply(lambda s: '.'.join(s.split(' ')[::-1]))
 
 
 def sort_members(member_df: DataFrame) -> DataFrame:
     """Sorts member_df using defined key 'sort_key'"""
 
     try:
-        return member_df.sort_values([frame.cfgs['sortKeyColName'], 'Full Name'], key=sort_key)
+        return member_df.sort_values([cfgs['sortKeyColName'], 'Full Name'], key=sort_key)
     except KeyError:
         handle_error('The "Member List" file was improperly formatted')
 
@@ -147,7 +147,7 @@ def get_output_table() -> DataFrame:
     
     #If either the file does not exist or the file is empty
     open(file_path, 'w').close()
-    return get_members().drop(columns=[frame.cfgs['sortKeyColName']])
+    return get_members().drop(columns=[cfgs['sortKeyColName']])
 
 
 def format_output_table(
@@ -162,7 +162,7 @@ def format_output_table(
     #Next, adds a new column for this session and populates with False
     new_csv_table = pd.merge(
         csv_df, 
-        member_df.drop(columns=[frame.cfgs['sortKeyColName']]),
+        member_df.drop(columns=[cfgs['sortKeyColName']]),
         how='right', 
         on=['ID', 'Full Name']
     )
@@ -262,7 +262,7 @@ def handle_input(ses_df: DataFrame, ID: int) -> None:
         raise RuntimeError('handle_input cannot be run before GUI is initialized')
     
     #Uses sign_in_out output to determine sign-in or sign-out
-    io = not sign_in_out(ID, frame.ses, frame.cfgs['requiredHours'])
+    io = not sign_in_out(ID, frame.ses, cfgs['requiredHours'])
     io = ['in', 'out'][int(io)]
     
     fname = ses_df.at[ID, "Full Name"].split(" ")[0]
@@ -288,12 +288,11 @@ class AttendanceGUI(tk.Frame):
         self.mem = sort_members(get_members())
         self.out = format_output_table(get_output_table(), self.mem)
         self.ses = format_session_table(self.mem)
-        self.cfgs = read_cfgs()
 
         #Foreground and background colors
-        if self.cfgs['backgroundColor'] not in {'black', 'white'}:
+        if cfgs['backgroundColor'] not in {'black', 'white'}:
             raise ValueError('Color present in config file not acceptable')
-        self.bg_color = self.cfgs['backgroundColor']
+        self.bg_color = cfgs['backgroundColor']
         self.fg_color = 'black' if self.bg_color == 'white' else 'white'
 
         #GUI initialization/creation
@@ -423,6 +422,7 @@ class AttendanceGUI(tk.Frame):
 
 if __name__ == '__main__':
     root = tk.Tk()
+    cfgs = read_cfgs()
     frame = GUI = AttendanceGUI(root=root)
 
     on_start()
