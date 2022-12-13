@@ -303,7 +303,7 @@ class AttendanceGUI(tk.Frame):
         
         #Window formatting
         self.root.title('Attendance')
-        self.root.iconbitmap(f'{os.getcwd()}\\images\\robostangs_logo.ico')
+        self.root.iconbitmap(f'{os.getcwd()}\\images\\logo.ico')
 
         #Create/initialize widgets
         #Object container (to center all objects in frame)
@@ -311,7 +311,7 @@ class AttendanceGUI(tk.Frame):
         self.main_frame.pack(expand=True)
 
         #Robostangs logo
-        self.logo = ImageTk.PhotoImage(Image.open('images\\robostangs_logo.png'))
+        self.logo = ImageTk.PhotoImage(Image.open('images\\logo.png'))
         self.logo_label = tk.Label(
             self.main_frame, 
             image=self.logo, 
